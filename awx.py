@@ -43,3 +43,23 @@ def get_host_facts(host_id):
   endpoint = f"/hosts/{host_id}/ansible_facts/"
 
   return fetch(endpoint)
+
+def get_groups(page_size=10):
+  groups = []
+  endpoint = f"/groups?page_size={page_size}"
+
+  fetched_data = fetch(endpoint)
+  raw_groups_list = fetched_data.get("results", [])
+
+  for raw_group in raw_groups_list:
+    new_group = {
+      "id": raw_group["id"],
+      "name": raw_group["name"],
+      "description": raw_group["description"],
+      "inventory_name": (raw_group.get("summary_fields", {})
+                         .get("inventory", {})
+                         .get("name", None))
+    }
+    groups.append(new_group)
+
+  return groups
