@@ -51,27 +51,8 @@ class Host:
     self.set_security_agents()
     self.set_software()
     self.ubuntu_pro = self.raw_facts_local.get("ubuntu_pro", {}).get("attached", None)
-    self.duo = "Placeholder"
+    self.duo  = "Placeholder"
     self.ldap = "Placeholder"
-
-    # set software installation flags
-    # Try exact key first, otherwise find a key that contains the fact_key string
-    # for attr, fact_key in self.SOFTWARE_MAP.items():
-    #   matched_key = None
-    #   # exact match
-    #   if fact_key in self.raw_facts_local:
-    #     matched_key = fact_key
-    #   else:
-    #     # fallback: find a key that contains the fact_key as a substring
-    #     for k in self.raw_facts_local.keys():
-    #       if re.search(re.escape(fact_key), k):
-    #         matched_key = k
-    #         break
-
-    #   value = None
-    #   if matched_key is not None:
-    #     value = self.raw_facts_local.get(matched_key, {}).get("state") == "installed"
-    #   setattr(self, attr, value)
 
   def set_hostname(self):
     facts_hostname = (self.raw_facts_local
