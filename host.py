@@ -4,15 +4,6 @@ import awx
 from patch_groups import PATCH_CYCLE_GROUPS
 
 class Host:
-  SOFTWARE_MAP = {
-    "ad_bind": "lsa_ad_bind",
-    "firewalld": "lsa_firewalld_dev_base",
-    "threatdown": "mwalwarebytes",
-    "crowdstrike": "lsa_falcon_sensor",
-    "tenable": "NessusAgent"
-  }
-
-  # ordered fields for CSV export; software flags are expanded from SOFTWARE_MAP
   FIELDS = [
     ("awx_id", None),
     ("support_group", None),
@@ -22,9 +13,13 @@ class Host:
     ("password_rotation", None),
     ("duo", None),
     ("ldap", None),
+    ("nessus", None),
+    ("crowdstrike", None),
+    ("threatdown", None),
+    ("ad_bind", None),
+    ("firewalld", None),
+    ("ubuntu_pro", None)
   ]
-
-  CSV_FIELDS = [name for name, _ in FIELDS] + list(SOFTWARE_MAP.keys()) + ["ubuntu_pro"]
 
   def __init__(self, raw_data):
     self.raw_data = raw_data
@@ -48,42 +43,35 @@ class Host:
       if not hasattr(self, name):
         setattr(self, name, default)
 
-    # initialize software flags to None
-    for key in self.SOFTWARE_MAP:
-      if not hasattr(self, key):
-        setattr(self, key, None)
-
-    # ubuntu_pro default
-    if not hasattr(self, 'ubuntu_pro'):
-      self.ubuntu_pro = None
-
     self.support_group = self.variables.get("foreman_location_name", "Self-Managed")
     self.set_hostname()
     self.set_os()
     self.set_host_collection()
     self.set_password_rotation()
+    self.set_security_agents()
+    self.set_software()
     self.ubuntu_pro = self.raw_facts_local.get("ubuntu_pro", {}).get("attached", None)
     self.duo = "Placeholder"
     self.ldap = "Placeholder"
 
     # set software installation flags
     # Try exact key first, otherwise find a key that contains the fact_key string
-    for attr, fact_key in self.SOFTWARE_MAP.items():
-      matched_key = None
-      # exact match
-      if fact_key in self.raw_facts_local:
-        matched_key = fact_key
-      else:
-        # fallback: find a key that contains the fact_key as a substring
-        for k in self.raw_facts_local.keys():
-          if re.search(re.escape(fact_key), k):
-            matched_key = k
-            break
+    # for attr, fact_key in self.SOFTWARE_MAP.items():
+    #   matched_key = None
+    #   # exact match
+    #   if fact_key in self.raw_facts_local:
+    #     matched_key = fact_key
+    #   else:
+    #     # fallback: find a key that contains the fact_key as a substring
+    #     for k in self.raw_facts_local.keys():
+    #       if re.search(re.escape(fact_key), k):
+    #         matched_key = k
+    #         break
 
-      value = None
-      if matched_key is not None:
-        value = self.raw_facts_local.get(matched_key, {}).get("state") == "installed"
-      setattr(self, attr, value)
+    #   value = None
+    #   if matched_key is not None:
+    #     value = self.raw_facts_local.get(matched_key, {}).get("state") == "installed"
+    #   setattr(self, attr, value)
 
   def set_hostname(self):
     facts_hostname = (self.raw_facts_local
@@ -119,8 +107,23 @@ class Host:
       for group in self.groups
     )
 
+  def set_security_agents(self):
+    expected_agents = ["threatdown", "crowdstrike", "nessus"]
+    security_agents = self.raw_facts_local.get("lsa_host", {}).get("security_agents", {})
+    for agent in expected_agents:
+      setattr(self, agent, security_agents.get(agent, {}).get("installed", None) == "true")
+  
+  def set_software(self):
+    software_map = {
+      "ad_bind": "lsa_ad_bind",
+      "firewalld": "lsa_firewalld_dev_base"
+    }
+    for attr, fact_key in software_map.items():
+      value = self.raw_facts_local.get(fact_key, {}).get("state") == "installed"
+      setattr(self, attr, value)
+
   def to_dict(self):
     out = {}
-    for key in self.CSV_FIELDS:
-      out[key] = getattr(self, key, None)
+    for name, default in self.FIELDS:
+      out[name] = getattr(self, name, default)
     return out
