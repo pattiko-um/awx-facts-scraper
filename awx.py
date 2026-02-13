@@ -5,7 +5,7 @@ import json
 import os
 from host import Host
 
-API_ROOT="https://awx.lsait.lsa.umich.edu/api/v2"
+API_ROOT="https://awx.lsait.lsa.umich.edu"
 AWX_USER = os.getenv("AWX_USER")
 AWX_PASS = os.getenv("AWX_PASS")
 
@@ -26,12 +26,17 @@ def fetch(endpoint):
   except Exception as e:
     print("Error fetching data:", e)
 
-def get_hosts(page_size=10):
+def get_hosts(page_size=200):
   hosts = []
-  endpoint = f"/hosts?page_size={page_size}"
+  endpoint = f"/api/v2/hosts?page_size={page_size}"
 
   fetched_data = fetch(endpoint)
   raw_hosts_list = fetched_data.get("results", [])
+
+  while fetched_data.get("next"):
+    print("Fetching next page of hosts...")
+    fetched_data = fetch(fetched_data.get("next"))
+    raw_hosts_list.extend(fetched_data.get("results", []))
 
   for raw_host in raw_hosts_list:
     new_host = Host(raw_host)
@@ -40,13 +45,13 @@ def get_hosts(page_size=10):
   return hosts
 
 def get_host_facts(host_id):
-  endpoint = f"/hosts/{host_id}/ansible_facts/"
+  endpoint = f"/api/v2/hosts/{host_id}/ansible_facts/"
 
   return fetch(endpoint)
 
 def get_groups(page_size=10):
   groups = []
-  endpoint = f"/groups?page_size={page_size}"
+  endpoint = f"/api/v2/groups?page_size={page_size}"
 
   fetched_data = fetch(endpoint)
   raw_groups_list = fetched_data.get("results", [])

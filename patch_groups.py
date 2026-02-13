@@ -17,4 +17,13 @@ PATCH_CYCLE_GROUPS = [
   "foreman_hostcollection_randall_update_second_saturday_noreboot",
   "foreman_hostcollection_randall_update_second_sunday",
   "foreman_hostcollection_randall_update_third_sunday",
+  "foreman_hostcollection_bsb_chemautoupdateandrebootcycle",
+  "foreman_hostcollection_ehtsupdateandrebootsecondwednesdayofthemonth",
+  "foreman_hostcollection_ehupdateandforcerestarteverysunday",
+  "foreman_hostcollection_ehupdateandreboot1stofmonth",
+  "foreman_hostcollection_ehupdateandrestartfirstmonday",
+  "foreman_hostcollection_ehupdateandrestartlastfriday",
+  "foreman_hostcollection_infrapatchgroupa",
+  "foreman_hostcollection_infrapatchgroupb",
+  "foreman_hostcollection_infrapilotpatchgroup",
 ]

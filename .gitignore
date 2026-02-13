@@ -1,2 +1,4 @@
 __pycache__
 hosts.csv
+groups.csv
+.env
