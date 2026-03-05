@@ -68,10 +68,11 @@ class Host:
                 .get("os", {})
                 .get("tdx_friendly", "")
                 .removeprefix("Linux: "))
-    variables_os = (self.variables
-                    .get("foreman_content_facet_attributes", {})
-                    .get("content_view", {})
-                    .get("name", None))
+    
+    foreman_content_attrs = self.variables.get("foreman_content_facet_attributes") or {}
+    content_view = foreman_content_attrs.get("content_view") or {}
+    variables_os = content_view.get("name", "")
+
     self.os = self.variables.get("foreman_operatingsystem_name", None) or variables_os or facts_os or "Unknown"
   
   def set_host_collection(self):
