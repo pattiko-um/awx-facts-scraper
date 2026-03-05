@@ -1,6 +1,7 @@
 import json
 import re
 import awx
+from datetime import datetime
 from patch_groups import PATCH_CYCLE_GROUPS
 
 class Host:
@@ -18,7 +19,8 @@ class Host:
     ("threatdown", None),
     ("ad_bind", None),
     ("firewalld", None),
-    ("ubuntu_pro", None)
+    ("ubuntu_pro", None),
+    ("password_rotated_on", None)
   ]
 
   def __init__(self, raw_data):
@@ -48,27 +50,23 @@ class Host:
     self.set_os()
     self.set_host_collection()
     self.set_password_rotation()
+    self.set_duo()
     self.set_security_agents()
     self.set_software()
     self.ubuntu_pro = self.raw_facts_local.get("ubuntu_pro", {}).get("attached", None)
-    self.duo  = "Placeholder"
-    self.ldap = "Placeholder"
+    self.ldap = None  # Placeholder for future LDAP logic
 
   def set_hostname(self):
-    facts_hostname = (self.raw_facts_local
-                      .get("lsa_host", {})
-                      .get("hostname", None))
-    self.hostname = facts_hostname or self.raw_data["name"]
+    self.hostname = self.raw_data["name"].split(".")[0]
 
   def set_os(self):
     # Picks most useful OS name from variables and facts
     # Note: Can improve facts_os with minor version if necessary
-    facts_os = (self.raw_facts_local
-                .get("lsa_host", {})
+    facts_os = (self.lsa_host
                 .get("os", {})
                 .get("tdx_friendly", "")
                 .removeprefix("Linux: "))
-    
+
     foreman_content_attrs = self.variables.get("foreman_content_facet_attributes") or {}
     content_view = foreman_content_attrs.get("content_view") or {}
     variables_os = content_view.get("name", "")
@@ -84,14 +82,29 @@ class Host:
   
   def set_password_rotation(self):
     # Returns True if any group name contains "password_rotation"
-    self.password_rotation = any(
+    in_group = any(
       "password_rotation" in group.get("name", "")
       for group in self.groups
     )
 
+    timestamp = self.raw_facts_local.get("password_rotation", {}).get("run_timestamp", None)
+    try:
+      timestamp = int(timestamp)
+      self.password_rotated_on = datetime.fromtimestamp(timestamp)
+    except (TypeError, ValueError):
+      self.password_rotated_on = None
+
+    self.password_rotation = in_group
+
+  
+  def set_duo(self):
+    self.duo = (self.lsa_host
+            .get("mfa", {})
+            .get("duo", False))
+
   def set_security_agents(self):
     expected_agents = ["threatdown", "crowdstrike", "nessus"]
-    security_agents = self.raw_facts_local.get("lsa_host", {}).get("security_agents", {})
+    security_agents = self.lsa_host.get("security_agents", {})
     for agent in expected_agents:
       setattr(self, agent, security_agents.get(agent, {}).get("installed", None) == "true")
   
