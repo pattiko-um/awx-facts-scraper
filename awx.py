@@ -5,7 +5,7 @@ import json
 import os
 from host import Host
 
-API_ROOT="https://awx.lsait.lsa.umich.edu"
+API_ROOT = "https://awx.lsait.lsa.umich.edu"
 AWX_USER = os.getenv("AWX_USER")
 AWX_PASS = os.getenv("AWX_PASS")
 

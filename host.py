@@ -38,6 +38,7 @@ class Host:
 
     self.raw_facts = awx.get_host_facts(self.awx_id)
     self.raw_facts_local = self.raw_facts.get("ansible_local", {})
+    self.lsa_host = self.raw_facts_local.get("lsa_host", {})
     self.groups = self.raw_data.get("summary_fields", {}).get("groups", {}).get("results", [])
 
     # initialize canonical defaults for known fields and software
@@ -82,6 +83,7 @@ class Host:
   
   def set_password_rotation(self):
     # Returns True if any group name contains "password_rotation"
+    # Also attempts to parse password rotation timestamp if available
     in_group = any(
       "password_rotation" in group.get("name", "")
       for group in self.groups
